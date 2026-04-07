@@ -601,132 +601,227 @@ function createOrion() {
   /* ── Materials ── */
   const matHeatShield = new THREE.MeshStandardMaterial({color:0x2a1e14,roughness:0.95,metalness:0.1});
   const matAblator    = new THREE.MeshStandardMaterial({color:0x3d3028,roughness:0.85,metalness:0.05});
-  const matCMSkin     = new THREE.MeshStandardMaterial({color:0xc8bfa8,roughness:0.5,metalness:0.3,envMapIntensity:0.6});
+  const matCMSkin     = new THREE.MeshStandardMaterial({color:0xc8bfa8,roughness:0.5,metalness:0.3});
   const matCMTop      = new THREE.MeshStandardMaterial({color:0x888480,roughness:0.4,metalness:0.5});
-  const matSM         = new THREE.MeshStandardMaterial({color:0xd4c78a,roughness:0.35,metalness:0.6}); // gold MLI
+  const matSM         = new THREE.MeshStandardMaterial({color:0xc9b96a,roughness:0.3,metalness:0.7}); // gold MLI
   const matSMPanels   = new THREE.MeshStandardMaterial({color:0x888888,roughness:0.5,metalness:0.7});
-  const matNozzle     = new THREE.MeshStandardMaterial({color:0x555555,roughness:0.3,metalness:0.9});
-  const matSolar      = new THREE.MeshStandardMaterial({color:0x0a1640,roughness:0.2,metalness:0.8,emissive:0x020830,emissiveIntensity:0.3});
+  const matNozzle     = new THREE.MeshStandardMaterial({color:0x444444,roughness:0.25,metalness:0.95});
+  const matSolar      = new THREE.MeshStandardMaterial({color:0x0a1640,roughness:0.15,metalness:0.85,emissive:0x020830,emissiveIntensity:0.2});
+  const matSolarBack  = new THREE.MeshStandardMaterial({color:0x222222,roughness:0.5,metalness:0.4});
   const matStrut      = new THREE.MeshStandardMaterial({color:0x666666,roughness:0.4,metalness:0.7});
   const matAdapter    = new THREE.MeshStandardMaterial({color:0x777777,roughness:0.5,metalness:0.5});
+  const matWindow     = new THREE.MeshStandardMaterial({color:0x0a0a18,roughness:0.05,metalness:0.95});
+  const matMLI        = new THREE.MeshStandardMaterial({color:0xd4c78a,roughness:0.25,metalness:0.65}); // multi-layer insulation
+  const matFairing    = new THREE.MeshStandardMaterial({color:0x999999,roughness:0.6,metalness:0.4});
 
-  /* ── Crew Module (CM) ── */
-  const cmR = 0.50, cmTopR = 0.20, cmH = 0.65;
+  /* ── Crew Module (CM) — Apollo-derived capsule ── */
+  const cmR = 0.50, cmTopR = 0.18, cmH = 0.62;
 
-  // Heat shield (flat disc with slight dome)
-  const hsGeo = new THREE.SphereGeometry(cmR, 32, 8, 0, Math.PI*2, 0, Math.PI*0.12);
+  // Heat shield (AVCOAT ablator — slightly domed)
+  const hsGeo = new THREE.SphereGeometry(cmR, 48, 12, 0, Math.PI*2, 0, Math.PI*0.14);
   const hs = new THREE.Mesh(hsGeo, matHeatShield);
-  hs.rotation.x = Math.PI; hs.position.y = -0.04;
+  hs.rotation.x = Math.PI; hs.position.y = -0.03;
   g.add(hs);
-  // Heat shield rim
-  const hsRim = new THREE.Mesh(new THREE.TorusGeometry(cmR, 0.018, 8, 32), matAblator);
+  // Ablator edge ring
+  const hsRim = new THREE.Mesh(new THREE.TorusGeometry(cmR, 0.015, 12, 48), matAblator);
   hsRim.rotation.x = Math.PI/2; hsRim.position.y = 0;
   g.add(hsRim);
 
-  // CM conical body (truncated cone — wide base at bottom, narrower top)
-  const cmBody = new THREE.Mesh(new THREE.CylinderGeometry(cmTopR, cmR, cmH, 32, 1, true), matCMSkin);
-  cmBody.position.y = cmH/2 + 0.02;
+  // CM conical body — using lathe for smoother profile
+  const cmProfile = [];
+  for (let i = 0; i <= 20; i++) {
+    const t = i / 20;
+    const r = cmR - (cmR - cmTopR) * Math.pow(t, 0.92); // slight curve
+    const y = t * cmH;
+    cmProfile.push(new THREE.Vector2(r, y));
+  }
+  const cmBody = new THREE.Mesh(new THREE.LatheGeometry(cmProfile, 48), matCMSkin);
+  cmBody.position.y = 0.02;
   g.add(cmBody);
 
-  // CM top cap
-  const cmCap = new THREE.Mesh(new THREE.SphereGeometry(cmTopR, 16, 8, 0, Math.PI*2, 0, Math.PI/2), matCMTop);
+  // CM top cap (rounded)
+  const cmCap = new THREE.Mesh(new THREE.SphereGeometry(cmTopR, 24, 12, 0, Math.PI*2, 0, Math.PI*0.5), matCMTop);
   cmCap.position.y = cmH + 0.02;
   g.add(cmCap);
 
-  // CM window band — small dark rectangles around the cone
-  const matWindow = new THREE.MeshStandardMaterial({color:0x111122,roughness:0.1,metalness:0.9});
-  for (let i=0;i<3;i++) {
-    const win = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.04,0.01), matWindow);
-    const a = (i-1)*0.55;
-    const yp = cmH*0.45+0.02, rp = cmR*0.62;
-    win.position.set(Math.sin(a)*rp, yp, Math.cos(a)*rp);
+  // Windows — 4 windows (2 rendezvous + 2 side docking)
+  for (let i = 0; i < 4; i++) {
+    const a = (i - 1.5) * 0.45;
+    const yp = cmH * 0.48 + 0.02;
+    const rAtY = cmR - (cmR - cmTopR) * Math.pow(0.48, 0.92);
+    const win = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.035, 0.012), matWindow);
+    win.position.set(Math.sin(a) * (rAtY + 0.005), yp, Math.cos(a) * (rAtY + 0.005));
     win.lookAt(0, yp, 0); win.rotateY(Math.PI);
     g.add(win);
+    // Window frame
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(0.058, 0.042, 0.008), matFairing);
+    frame.position.copy(win.position);
+    frame.rotation.copy(win.rotation);
+    g.add(frame);
   }
 
-  // CM-SM adapter ring
+  // RCS thruster pods on CM (12 thrusters in groups of 3)
+  for (let i = 0; i < 4; i++) {
+    const a = i * Math.PI / 2 + Math.PI / 4;
+    const yp = cmH * 0.25 + 0.02;
+    const rAtY = cmR - (cmR - cmTopR) * Math.pow(0.25, 0.92);
+    for (let j = 0; j < 3; j++) {
+      const thr = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.012, 0.025, 6), matNozzle);
+      const aOff = (j - 1) * 0.12;
+      thr.position.set(Math.sin(a + aOff) * (rAtY + 0.01), yp + (j - 1) * 0.03, Math.cos(a + aOff) * (rAtY + 0.01));
+      thr.rotation.z = Math.PI / 2;
+      thr.rotation.y = a;
+      g.add(thr);
+    }
+  }
+
+  // CM-SM adapter ring (spacecraft adapter)
   const adapterY = -0.06;
-  const adapter = new THREE.Mesh(new THREE.CylinderGeometry(cmR+0.01, cmR+0.02, 0.08, 32, 1, true), matAdapter);
+  const adapter = new THREE.Mesh(new THREE.CylinderGeometry(cmR + 0.008, cmR + 0.015, 0.10, 48, 1, true), matAdapter);
   adapter.position.y = adapterY;
   g.add(adapter);
+  // Separation bolt line
+  const sepLine = new THREE.Mesh(new THREE.TorusGeometry(cmR + 0.012, 0.004, 6, 48), matNozzle);
+  sepLine.rotation.x = Math.PI / 2; sepLine.position.y = adapterY - 0.04;
+  g.add(sepLine);
 
   /* ── European Service Module (ESM) ── */
-  const smR = cmR + 0.02, smH = 0.80;
-  const smY = adapterY - smH/2 - 0.04;
+  const smR = cmR + 0.015, smH = 0.78;
+  const smY = adapterY - smH / 2 - 0.06;
 
-  // Main SM cylinder (gold MLI)
-  const smCyl = new THREE.Mesh(new THREE.CylinderGeometry(smR, smR, smH, 32, 1, true), matSM);
+  // Main SM cylinder (gold multi-layer insulation)
+  const smCyl = new THREE.Mesh(new THREE.CylinderGeometry(smR, smR, smH, 48, 1, true), matSM);
   smCyl.position.y = smY;
   g.add(smCyl);
 
   // SM bottom cap
-  const smBot = new THREE.Mesh(new THREE.CircleGeometry(smR, 32), matSMPanels);
-  smBot.rotation.x = Math.PI/2; smBot.position.y = smY - smH/2;
+  const smBot = new THREE.Mesh(new THREE.CircleGeometry(smR, 48), matSMPanels);
+  smBot.rotation.x = Math.PI / 2; smBot.position.y = smY - smH / 2;
   g.add(smBot);
 
   // SM top cap
-  const smTop = new THREE.Mesh(new THREE.CircleGeometry(smR, 32), matSMPanels);
-  smTop.rotation.x = -Math.PI/2; smTop.position.y = smY + smH/2;
+  const smTop = new THREE.Mesh(new THREE.CircleGeometry(smR, 48), matSMPanels);
+  smTop.rotation.x = -Math.PI / 2; smTop.position.y = smY + smH / 2;
   g.add(smTop);
 
-  // SM panel detail lines (horizontal bands)
-  for (let i=0;i<3;i++) {
-    const band = new THREE.Mesh(new THREE.CylinderGeometry(smR+0.005, smR+0.005, 0.01, 32, 1, true), matSMPanels);
-    band.position.y = smY - smH*0.3 + i*smH*0.3;
+  // SM horizontal panel bands (structural rings)
+  for (let i = 0; i < 5; i++) {
+    const band = new THREE.Mesh(new THREE.TorusGeometry(smR + 0.003, 0.005, 6, 48), matSMPanels);
+    band.rotation.x = Math.PI / 2;
+    band.position.y = smY - smH * 0.4 + i * smH * 0.2;
     g.add(band);
   }
 
-  // SM radiator panels (2 small rectangular panels on sides)
-  for (let i=0;i<2;i++) {
-    const rad = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.25, 0.008), new THREE.MeshStandardMaterial({color:0xeeeeee,roughness:0.3,metalness:0.5}));
-    const a = i*Math.PI;
-    rad.position.set(Math.sin(a)*(smR+0.18), smY+0.05, Math.cos(a)*(smR+0.18));
-    rad.lookAt(0, smY+0.05, 0);
-    g.add(rad);
+  // Vertical stiffener ribs on SM
+  for (let i = 0; i < 8; i++) {
+    const a = i * Math.PI / 4;
+    const rib = new THREE.Mesh(new THREE.BoxGeometry(0.006, smH * 0.9, 0.006), matSMPanels);
+    rib.position.set(Math.sin(a) * (smR + 0.003), smY, Math.cos(a) * (smR + 0.003));
+    g.add(rib);
   }
 
-  /* ── Main engine nozzle (OMS-E) ── */
-  const nozzle = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.25, 16, 1, true), matNozzle);
-  nozzle.position.y = smY - smH/2 - 0.12;
-  g.add(nozzle);
-  const nozzleRim = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.008, 6, 16), matNozzle);
-  nozzleRim.rotation.x = Math.PI/2; nozzleRim.position.y = smY - smH/2 - 0.24;
-  g.add(nozzleRim);
-
-  // Auxiliary thrusters (8 small nozzles around SM base)
-  for (let i=0;i<8;i++) {
-    const a = i*Math.PI/4;
-    const thr = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.06, 6, 1, true), matNozzle);
-    thr.position.set(Math.sin(a)*(smR-0.03), smY-smH/2-0.03, Math.cos(a)*(smR-0.03));
-    g.add(thr);
+  // SM radiator panels (2 deployed, white/silver)
+  for (let i = 0; i < 2; i++) {
+    const a = i * Math.PI;
+    const radGroup = new THREE.Group();
+    const rad = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.22, 0.006),
+      new THREE.MeshStandardMaterial({color:0xdddddd, roughness:0.25, metalness:0.6, side: THREE.DoubleSide}));
+    rad.position.x = smR + 0.17;
+    radGroup.add(rad);
+    // Radiator hinge
+    const hinge = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.22, 6), matStrut);
+    hinge.position.x = smR + 0.01;
+    radGroup.add(hinge);
+    radGroup.position.y = smY + 0.1;
+    radGroup.rotation.y = a;
+    g.add(radGroup);
   }
 
-  /* ── Solar Array Wings (4 in X-configuration) ── */
-  const wingLen = 3.5, wingW = 0.55, wingSegments = 3;
-  for (let i=0;i<4;i++) {
-    const a = i*Math.PI/2 + Math.PI/4; // 45° offset → X pattern
+  // Umbilical fairings (cable conduits along SM)
+  for (let i = 0; i < 2; i++) {
+    const a = i * Math.PI + Math.PI / 2;
+    const cond = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, smH * 0.7, 6), matMLI);
+    cond.position.set(Math.sin(a) * (smR + 0.015), smY, Math.cos(a) * (smR + 0.015));
+    g.add(cond);
+  }
+
+  /* ── Main engine nozzle (OMS-E, derived from Shuttle OMS) ── */
+  // Bell shape using lathe
+  const nozzleProfile = [];
+  for (let i = 0; i <= 15; i++) {
+    const t = i / 15;
+    const r = 0.04 + 0.10 * Math.pow(t, 0.6);
+    nozzleProfile.push(new THREE.Vector2(r, -t * 0.28));
+  }
+  const nozzleBell = new THREE.Mesh(new THREE.LatheGeometry(nozzleProfile, 24), matNozzle);
+  nozzleBell.position.y = smY - smH / 2;
+  g.add(nozzleBell);
+  // Inner nozzle glow hint
+  const nozzleInner = new THREE.Mesh(new THREE.CircleGeometry(0.04, 16),
+    new THREE.MeshBasicMaterial({color:0x1a1a1a}));
+  nozzleInner.rotation.x = Math.PI / 2; nozzleInner.position.y = smY - smH / 2 + 0.01;
+  g.add(nozzleInner);
+
+  // Auxiliary thrusters — 8 bipropellant thrusters around SM base
+  for (let i = 0; i < 8; i++) {
+    const a = i * Math.PI / 4;
+    const thrGroup = new THREE.Group();
+    const thr = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.018, 0.05, 8), matNozzle);
+    thr.position.y = -0.025;
+    thrGroup.add(thr);
+    const thrMount = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.015, 0.022), matSMPanels);
+    thrMount.position.y = 0.005;
+    thrGroup.add(thrMount);
+    thrGroup.position.set(Math.sin(a) * (smR + 0.01), smY - smH / 2 + 0.02, Math.cos(a) * (smR + 0.01));
+    g.add(thrGroup);
+  }
+
+  /* ── Solar Array Wings (4 in X-configuration, ESM heritage from ATV) ── */
+  const wingLen = 3.2, wingW = 0.50, wingSegments = 3;
+  for (let i = 0; i < 4; i++) {
+    const a = i * Math.PI / 2 + Math.PI / 4; // 45° offset → X pattern
     const wingGroup = new THREE.Group();
     wingGroup.position.y = smY + 0.05;
 
-    // Deployment strut
-    const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, wingLen, 4), matStrut);
-    strut.rotation.z = Math.PI/2;
-    strut.position.x = wingLen/2 + smR;
-    wingGroup.add(strut);
+    // Deployment boom (two parallel struts)
+    for (let b = 0; b < 2; b++) {
+      const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, wingLen, 4), matStrut);
+      strut.rotation.z = Math.PI / 2;
+      strut.position.set(wingLen / 2 + smR, 0, (b - 0.5) * 0.06);
+      wingGroup.add(strut);
+    }
 
-    // Solar panel segments
-    for (let s=0;s<wingSegments;s++) {
-      const panelX = smR + 0.15 + s*(wingLen/wingSegments) + (wingLen/wingSegments)/2;
-      // Front face (solar cells)
-      const panel = new THREE.Mesh(new THREE.BoxGeometry(wingLen/wingSegments - 0.04, wingW, 0.008), matSolar);
+    // Solar panel segments with cell grid pattern
+    for (let s = 0; s < wingSegments; s++) {
+      const segLen = wingLen / wingSegments;
+      const panelX = smR + 0.12 + s * segLen + segLen / 2;
+
+      // Main panel (front = solar cells, back = backing)
+      const panel = new THREE.Mesh(
+        new THREE.BoxGeometry(segLen - 0.03, wingW, 0.005),
+        [matSolarBack, matSolarBack, matSolarBack, matSolarBack, matSolar, matSolarBack]
+      );
       panel.position.set(panelX, 0, 0);
       wingGroup.add(panel);
 
-      // Panel grid lines
-      for (let gl=0;gl<3;gl++) {
-        const gridLine = new THREE.Mesh(new THREE.BoxGeometry(wingLen/wingSegments - 0.04, 0.003, 0.01), matStrut);
-        gridLine.position.set(panelX, -wingW/2+wingW*(gl+1)/4, 0);
-        wingGroup.add(gridLine);
+      // Cell divider grid — horizontal
+      for (let gl = 0; gl < 4; gl++) {
+        const gridH = new THREE.Mesh(new THREE.BoxGeometry(segLen - 0.03, 0.002, 0.007), matStrut);
+        gridH.position.set(panelX, -wingW / 2 + wingW * (gl + 1) / 5, 0);
+        wingGroup.add(gridH);
+      }
+      // Cell divider grid — vertical
+      for (let gl = 0; gl < 6; gl++) {
+        const gridV = new THREE.Mesh(new THREE.BoxGeometry(0.002, wingW, 0.007), matStrut);
+        gridV.position.set(panelX - segLen / 2 + segLen * (gl + 1) / 7, 0, 0);
+        wingGroup.add(gridV);
+      }
+
+      // Inter-segment hinge
+      if (s < wingSegments - 1) {
+        const hinge = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, wingW * 0.8, 6), matStrut);
+        hinge.position.set(panelX + segLen / 2 - 0.01, 0, 0);
+        wingGroup.add(hinge);
       }
     }
 
@@ -734,25 +829,41 @@ function createOrion() {
     g.add(wingGroup);
   }
 
-  /* ── Docking adapter on top ── */
-  const dock = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.10, 0.08, 12), matAdapter);
-  dock.position.y = cmH + 0.08;
+  /* ── Launch Abort System tower (on top during ascent — kept for visual) ── */
+  // Docking adapter / forward bay cover
+  const dock = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.10, 0.06, 16), matAdapter);
+  dock.position.y = cmH + 0.06;
   g.add(dock);
-  const dockRing = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.01, 6, 12), matAdapter);
-  dockRing.rotation.x = Math.PI/2; dockRing.position.y = cmH + 0.12;
+  const dockRing = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.008, 8, 16), matFairing);
+  dockRing.rotation.x = Math.PI / 2; dockRing.position.y = cmH + 0.09;
   g.add(dockRing);
+  // Docking probe
+  const probe = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.04, 8), matAdapter);
+  probe.position.y = cmH + 0.11;
+  g.add(probe);
 
-  /* ── Omni antennas (small sticks) ── */
-  for (let i=0;i<2;i++) {
-    const a = i*Math.PI + Math.PI/3;
-    const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.15, 4), matStrut);
-    ant.position.set(Math.sin(a)*cmR*0.4, cmH+0.12, Math.cos(a)*cmR*0.4);
-    ant.rotation.z = 0.3*(i===0?1:-1);
+  /* ── Antennas ── */
+  // Phased array antenna (flat panel)
+  const paAnt = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.008), matFairing);
+  paAnt.position.set(0, cmH * 0.7, cmTopR + (cmR - cmTopR) * 0.35);
+  g.add(paAnt);
+
+  // Omni antennas (2 whip antennas)
+  for (let i = 0; i < 2; i++) {
+    const a = i * Math.PI + Math.PI / 3;
+    const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.002, 0.002, 0.18, 4), matStrut);
+    ant.position.set(Math.sin(a) * cmR * 0.35, cmH + 0.14, Math.cos(a) * cmR * 0.35);
+    ant.rotation.z = 0.25 * (i === 0 ? 1 : -1);
     g.add(ant);
+    // Antenna tip
+    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.005, 6, 4), matFairing);
+    tip.position.set(
+      Math.sin(a) * cmR * 0.35 + Math.sin(0.25 * (i === 0 ? 1 : -1)) * 0.09,
+      cmH + 0.23,
+      Math.cos(a) * cmR * 0.35
+    );
+    g.add(tip);
   }
-
-  /* ── Lighting ── */
-  g.add(new THREE.PointLight(0x88aaff, 0.6, 12));
 
   g.scale.setScalar(0.9);
   return g;
@@ -849,8 +960,8 @@ function animate() {
       const dir = cl.clone().sub(cp);
       if (dir.lengthSq() > 0.001) { orion.lookAt(cl); orion.rotateX(Math.PI/2); }
       updateTrajectoryColors(Math.floor(met/T_MISSION_END*DISPLAY_N));
-      marker.material.opacity = 0.4+Math.sin(performance.now()*0.003)*0.2;
-      marker.scale.setScalar(1+Math.sin(performance.now()*0.002)*0.3);
+      marker.material.opacity = 0.5;
+      marker.scale.setScalar(1);
     }
     phaseLabel.textContent = getMissionPhase(met);
 
