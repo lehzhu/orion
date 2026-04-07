@@ -15,16 +15,12 @@ canvas{display:block}
 #load-track{width:180px;height:1px;background:#222;border-radius:1px}
 #load-fill{height:100%;width:0%;background:#556;border-radius:1px;transition:width .3s}
 
-#lighting-toggle{
-  position:fixed;top:24px;right:24px;z-index:10;
-  padding:8px 18px;border-radius:20px;cursor:pointer;
-  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
-  color:rgba(255,255,255,.45);font-size:10px;letter-spacing:2px;text-transform:uppercase;
-  transition:all .3s;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-family:inherit;
-}
-#lighting-toggle:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.7)}
-#lighting-toggle.lit{color:rgba(255,220,140,.75);border-color:rgba(255,200,100,.25);background:rgba(255,200,100,.08)}
+/* ── All UI auto-hides, revealed by hover zones ── */
+.ui-fade{opacity:0;pointer-events:none;transition:opacity .5s}
 
+/* Top-left: focus controls */
+#tl-zone{position:fixed;top:0;left:0;width:280px;height:60px;z-index:10}
+#tl-zone:hover .ui-fade{opacity:1;pointer-events:auto}
 #focus-controls{position:fixed;top:24px;left:24px;z-index:10;display:flex;gap:6px}
 .focus-btn{
   padding:7px 14px;border-radius:16px;cursor:pointer;
@@ -36,6 +32,40 @@ canvas{display:block}
 .focus-btn:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.7)}
 .focus-btn.active{color:rgba(140,200,255,.75);border-color:rgba(140,200,255,.25);background:rgba(140,200,255,.06)}
 
+/* Top-right: lighting toggle */
+#tr-zone{position:fixed;top:0;right:0;width:180px;height:60px;z-index:10}
+#tr-zone:hover .ui-fade{opacity:1;pointer-events:auto}
+#lighting-toggle{
+  position:fixed;top:24px;right:24px;z-index:10;
+  padding:8px 18px;border-radius:20px;cursor:pointer;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+  color:rgba(255,255,255,.45);font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  transition:all .3s;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-family:inherit;
+}
+#lighting-toggle:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.7)}
+#lighting-toggle.lit{color:rgba(255,220,140,.75);border-color:rgba(255,200,100,.25);background:rgba(255,200,100,.08)}
+
+/* Top-center: DSN status */
+#dsn-zone{position:fixed;top:0;left:50%;transform:translateX(-50%);width:320px;height:50px;z-index:10}
+#dsn-zone:hover #dsn-status,#dsn-status.peek{opacity:1;pointer-events:auto}
+#dsn-status{
+  position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:10;
+  display:flex;gap:10px;align-items:center;
+  padding:6px 14px;border-radius:16px;
+  background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.06);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  font-size:9px;letter-spacing:1px;color:rgba(255,255,255,.3);text-transform:uppercase;
+  transition:opacity .6s;opacity:0;pointer-events:none;
+}
+#dsn-status .dot{width:5px;height:5px;border-radius:50%;background:#333;transition:background .5s}
+#dsn-status .dot.live{background:#4f8;box-shadow:0 0 6px #4f8}
+#dsn-status .dish{display:flex;align-items:center;gap:4px}
+#dsn-status .range{color:rgba(255,255,255,.2);font-variant-numeric:tabular-nums}
+
+/* Bottom-right: music panel */
+#br-zone{position:fixed;bottom:0;right:0;width:380px;height:80px;z-index:10}
+#br-zone:hover .ui-fade{opacity:1;pointer-events:auto}
+#music-panel.playing~.br-expand{height:240px}
 #music-panel{position:fixed;bottom:24px;right:24px;z-index:10;display:flex;flex-direction:column;align-items:flex-end}
 #music-expanded{
   display:none;margin-bottom:10px;width:320px;
@@ -68,35 +98,21 @@ canvas{display:block}
 #music-panel.playing:hover #music-btn{opacity:1;pointer-events:auto}
 #music-panel.playing:hover #music-expanded{background:rgba(8,8,14,.88);border-color:rgba(255,255,255,.07);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);padding:14px}
 
+/* Bottom-left: mission label, phase, debug */
+#bl-zone{position:fixed;bottom:0;left:0;width:240px;height:120px;z-index:10}
+#bl-zone:hover .ui-fade{opacity:1;pointer-events:auto}
 #mission-label{position:fixed;bottom:28px;left:28px;z-index:10;color:rgba(255,255,255,.18);font-size:10px;letter-spacing:4px;text-transform:uppercase}
 #phase-label{position:fixed;bottom:48px;left:28px;z-index:10;color:rgba(255,255,255,.12);font-size:9px;letter-spacing:2px;text-transform:uppercase}
-
-#dsn-status{
-  position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:10;
-  display:flex;gap:10px;align-items:center;
-  padding:6px 14px;border-radius:16px;
-  background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.06);
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  font-size:9px;letter-spacing:1px;color:rgba(255,255,255,.3);text-transform:uppercase;
-  transition:opacity .6s;opacity:0;pointer-events:none;
-}
-#dsn-zone{position:fixed;top:0;left:50%;transform:translateX(-50%);width:320px;height:50px;z-index:10}
-#dsn-zone:hover #dsn-status,#dsn-status.peek{opacity:1;pointer-events:auto}
-#dsn-status .dot{width:5px;height:5px;border-radius:50%;background:#333;transition:background .5s}
-#dsn-status .dot.live{background:#4f8;box-shadow:0 0 6px #4f8}
-#dsn-status .dish{display:flex;align-items:center;gap:4px}
-#dsn-status .range{color:rgba(255,255,255,.2);font-variant-numeric:tabular-nums}
-
-/* Debug button — hidden until hover on bottom-left area */
-#debug-zone{position:fixed;bottom:0;left:0;width:120px;height:80px;z-index:10}
-#debug-btn{
-  position:absolute;bottom:70px;left:28px;
-  opacity:0;transition:opacity .3s;cursor:pointer;
+#orbits-btn,#debug-btn{
+  position:fixed;left:28px;z-index:10;
+  cursor:pointer;
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
   color:rgba(255,255,255,.2);font-size:8px;letter-spacing:1px;text-transform:uppercase;
-  padding:4px 10px;border-radius:10px;font-family:inherit;
+  padding:4px 10px;border-radius:10px;font-family:inherit;transition:all .3s;
 }
-#debug-zone:hover #debug-btn{opacity:1}
+#orbits-btn{bottom:68px}
+#orbits-btn.active{color:rgba(140,200,255,.5);border-color:rgba(140,200,255,.15)}
+#debug-btn{bottom:88px}
 #debug-overlay{
   display:none;position:fixed;top:60px;left:24px;z-index:999;
   color:lime;font-size:10px;font-family:monospace;line-height:1.5;
@@ -113,20 +129,16 @@ canvas{display:block}
   <div id="load-track"><div id="load-fill"></div></div>
 </div>
 
-<div id="focus-controls">
-  <button class="focus-btn" data-target="earth">Earth</button>
-  <button class="focus-btn" data-target="moon">Moon</button>
-  <button class="focus-btn" data-target="orion">Orion</button>
+<div id="tl-zone">
+  <div id="focus-controls" class="ui-fade">
+    <button class="focus-btn" data-target="earth">Earth</button>
+    <button class="focus-btn" data-target="moon">Moon</button>
+    <button class="focus-btn" data-target="orion">Orion</button>
+  </div>
 </div>
 
-<button id="lighting-toggle">Light it up</button>
-
-<div id="music-panel">
-  <div id="music-expanded">
-    <input id="yt-url" type="text" placeholder="Paste a YouTube URL for ambient music" spellcheck="false">
-    <div id="yt-player"></div>
-  </div>
-  <button id="music-btn" title="Background music">&#9835;</button>
+<div id="tr-zone">
+  <button id="lighting-toggle" class="ui-fade">Light it up</button>
 </div>
 
 <div id="dsn-zone">
@@ -138,9 +150,22 @@ canvas{display:block}
   </div>
 </div>
 
-<div id="phase-label"></div>
-<div id="mission-label">Artemis II</div>
-<div id="debug-zone"><button id="debug-btn">Debug</button></div>
+<div id="br-zone">
+  <div id="music-panel" class="ui-fade">
+    <div id="music-expanded">
+      <input id="yt-url" type="text" placeholder="Paste a YouTube URL for ambient music" spellcheck="false">
+      <div id="yt-player"></div>
+    </div>
+    <button id="music-btn" title="Background music">&#9835;</button>
+  </div>
+</div>
+
+<div id="bl-zone">
+  <div id="phase-label" class="ui-fade"></div>
+  <div id="mission-label" class="ui-fade">Artemis II</div>
+  <button id="orbits-btn" class="ui-fade">Orbits</button>
+  <button id="debug-btn" class="ui-fade">Debug</button>
+</div>
 <div id="debug-overlay"></div>
 
 <script type="importmap">
@@ -484,8 +509,13 @@ const moonMesh = new THREE.Mesh(
 scene.add(moonMesh);
 
 /* ═══════════════════════════════════════════════════════════════════════
-   MOON ORBIT PATH — sampled from Chebyshev data over full data range
+   ORBITAL PATHS — Moon (blue) & Sun ecliptic/Earth heliocentric (gold)
    ═══════════════════════════════════════════════════════════════════════ */
+const orbitalPathGroup = new THREE.Group();
+scene.add(orbitalPathGroup);
+let orbitalPathsVisible = true;
+
+// Moon orbit path (cyan-blue)
 {
   const moonOrbitPts = [];
   const moonSteps = 600;
@@ -495,22 +525,28 @@ scene.add(moonMesh);
     moonOrbitPts.push(bodyScenePos(moonBody, jd));
   }
   const moonOrbitGeo = new THREE.BufferGeometry().setFromPoints(moonOrbitPts);
-  const moonOrbitLine = new THREE.Line(moonOrbitGeo, new THREE.LineBasicMaterial({
-    color: 0x556677, transparent: true, opacity: 0.2
-  }));
-  scene.add(moonOrbitLine);
+  orbitalPathGroup.add(new THREE.Line(moonOrbitGeo, new THREE.LineBasicMaterial({
+    color: 0x4488cc, transparent: true, opacity: 0.25
+  })));
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   EARTH REFERENCE RING — thin circle at Earth's equatorial plane
-   ═══════════════════════════════════════════════════════════════════════ */
+// Sun apparent path / ecliptic (gold-amber) — shows Earth's heliocentric motion
+// In our geocentric frame the Sun traces the ecliptic; this IS Earth's orbit viewed from Earth
 {
-  const earthRingGeo = new THREE.RingGeometry(EARTH_RADIUS * 1.8, EARTH_RADIUS * 1.82, 128);
-  const earthRing = new THREE.Mesh(earthRingGeo, new THREE.MeshBasicMaterial({
-    color: 0x334466, transparent: true, opacity: 0.08, side: THREE.DoubleSide
-  }));
-  earthRing.rotation.x = -Math.PI / 2;
-  scene.add(earthRing);
+  const sunPathPts = [];
+  const sunSteps = 600;
+  const jdSpan = CHEB_JD_END - CHEB_JD_START;
+  const sunSceneScale = 400; // scale sun distance down to be visible
+  for (let i = 0; i <= sunSteps; i++) {
+    const jd = CHEB_JD_START + (i / sunSteps) * jdSpan;
+    const sp = bodyScenePos(sunBody, jd);
+    // Sun is far away — normalize and scale to a visible radius
+    sunPathPts.push(sp.normalize().multiplyScalar(sunSceneScale));
+  }
+  const sunPathGeo = new THREE.BufferGeometry().setFromPoints(sunPathPts);
+  orbitalPathGroup.add(new THREE.Line(sunPathGeo, new THREE.LineBasicMaterial({
+    color: 0xccaa44, transparent: true, opacity: 0.15
+  })));
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -857,6 +893,17 @@ document.querySelectorAll('.focus-btn').forEach(btn => {
 });
 
 /* ═══════════════════════════════════════════════════════════════════════
+   ORBITS TOGGLE
+   ═══════════════════════════════════════════════════════════════════════ */
+const orbitsBtn = document.getElementById('orbits-btn');
+orbitsBtn.classList.add('active');
+orbitsBtn.addEventListener('click', () => {
+  orbitalPathsVisible = !orbitalPathsVisible;
+  orbitalPathGroup.visible = orbitalPathsVisible;
+  orbitsBtn.classList.toggle('active', orbitalPathsVisible);
+});
+
+/* ═══════════════════════════════════════════════════════════════════════
    DEBUG BUTTON
    ═══════════════════════════════════════════════════════════════════════ */
 document.getElementById('debug-btn').addEventListener('click', () => {
@@ -944,17 +991,6 @@ let dsnFirstLoad = true;
 })();
 setInterval(pollDSN, 5000);
 
-/* ═══════════════════════════════════════════════════════════════════════
-   AUTO-LOAD LIVE ORION CAM (NASA YouTube stream)
-   ═══════════════════════════════════════════════════════════════════════ */
-{
-  const LIVE_ORION_ID = '6RwfNBtepa4';
-  ytUrl.value = `https://www.youtube.com/watch?v=${LIVE_ORION_ID}`;
-  musicPanel.classList.add('show'); // musicPanel = #music-expanded
-  ytPlayer.style.display = 'block';
-  ytPlayer.innerHTML = `<iframe src="https://www.youtube.com/embed/${LIVE_ORION_ID}?autoplay=1&mute=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-  document.getElementById('music-panel').classList.add('playing'); // #music-panel (outer wrapper)
-}
 
 /* ═══════════════════════════════════════════════════════════════════════
    RESIZE
