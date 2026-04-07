@@ -110,7 +110,8 @@ canvas{display:block}
 /* Bottom-left: mission label, phase, debug */
 #bl-zone{position:fixed;bottom:0;left:0;width:240px;height:160px;z-index:10}
 #bl-zone:hover .ui-fade{opacity:1;pointer-events:auto}
-#mission-label{position:fixed;bottom:28px;left:28px;z-index:10;color:rgba(255,255,255,var(--ui-alpha));font-size:10px;letter-spacing:4px;text-transform:uppercase}
+#mission-label{position:fixed;bottom:28px;left:28px;z-index:10;color:rgba(255,255,255,var(--ui-alpha));font-size:10px;letter-spacing:4px;text-transform:uppercase;text-decoration:none}
+#mission-label:hover{color:rgba(255,255,255,.7)}
 #phase-label{position:fixed;bottom:48px;left:28px;z-index:10;color:rgba(255,255,255,calc(var(--ui-alpha)*0.7));font-size:9px;letter-spacing:2px;text-transform:uppercase}
 #orbits-btn,#rewind-btn,#debug-btn{
   position:fixed;left:28px;z-index:10;
@@ -176,7 +177,7 @@ canvas{display:block}
 
 <div id="bl-zone">
   <div id="phase-label" class="ui-fade"></div>
-  <div id="mission-label" class="ui-fade">Artemis II</div>
+  <a id="mission-label" class="ui-fade" href="https://lhzhu.com" target="_blank">Artemis II</a>
   <button id="orbits-btn" class="ui-fade">Orbits</button>
   <button id="rewind-btn" class="ui-fade">⏪ Rewind</button>
   <button id="debug-btn" class="ui-fade">Debug</button>
