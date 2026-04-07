@@ -56,7 +56,7 @@ canvas{display:block}
 
 /* Top-center: DSN status */
 #dsn-zone{position:fixed;top:0;left:50%;transform:translateX(-50%);width:320px;height:50px;z-index:10}
-#dsn-zone:hover #dsn-status,#dsn-status.peek{opacity:1;pointer-events:auto}
+#dsn-zone:hover #dsn-status{opacity:1;pointer-events:auto}
 #dsn-status{
   position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:10;
   display:flex;gap:10px;align-items:center;
@@ -112,7 +112,7 @@ canvas{display:block}
 #bl-zone:hover .ui-fade{opacity:1;pointer-events:auto}
 #mission-label{position:fixed;bottom:28px;left:28px;z-index:10;color:rgba(255,255,255,var(--ui-alpha));font-size:10px;letter-spacing:4px;text-transform:uppercase}
 #phase-label{position:fixed;bottom:48px;left:28px;z-index:10;color:rgba(255,255,255,calc(var(--ui-alpha)*0.7));font-size:9px;letter-spacing:2px;text-transform:uppercase}
-#orbits-btn,#scale-btn,#rewind-btn,#debug-btn{
+#orbits-btn,#rewind-btn,#debug-btn{
   position:fixed;left:28px;z-index:10;
   cursor:pointer;
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
@@ -121,11 +121,9 @@ canvas{display:block}
 }
 #orbits-btn{bottom:68px}
 #orbits-btn.active{color:rgba(140,200,255,.5);border-color:rgba(140,200,255,.15)}
-#scale-btn{bottom:88px}
-#scale-btn.active{color:rgba(255,200,100,.5);border-color:rgba(255,200,100,.15)}
-#rewind-btn{bottom:108px}
+#rewind-btn{bottom:88px}
 #rewind-btn.active{color:rgba(255,180,100,.5);border-color:rgba(255,180,100,.15)}
-#debug-btn{bottom:128px}
+#debug-btn{bottom:108px}
 #debug-overlay{
   display:none;position:fixed;top:60px;left:24px;z-index:999;
   color:lime;font-size:10px;font-family:monospace;line-height:1.5;
@@ -180,7 +178,6 @@ canvas{display:block}
   <div id="phase-label" class="ui-fade"></div>
   <div id="mission-label" class="ui-fade">Artemis II</div>
   <button id="orbits-btn" class="ui-fade">Orbits</button>
-  <button id="scale-btn" class="ui-fade">Scale ×1</button>
   <button id="rewind-btn" class="ui-fade">⏪ Rewind</button>
   <button id="debug-btn" class="ui-fade">Debug</button>
 </div>
@@ -913,6 +910,18 @@ function animate() {
   try {
     const dt = clock.getDelta();
     updateMET(dt);
+
+    // Auto-stop rewind when it reaches current time
+    if (rewinding && met >= rewindTargetMET) {
+      met = rewindTargetMET;
+      rewinding = false;
+      useRealTime = true;
+      paused = false;
+      timeScale = 1;
+      rewindBtn.classList.remove('active');
+      rewindBtn.textContent = '⏪ Rewind';
+    }
+
     const curDate = new Date(LAUNCH_DATE.getTime() + Math.max(met,0)*1000);
 
     // Sun — from Chebyshev data (real position)
@@ -1061,20 +1070,6 @@ orbitsBtn.addEventListener('click', () => {
   orbitsBtn.classList.toggle('active', orbitalPathsVisible);
 });
 
-/* ═══════════════════════════════════════════════════════════════════════
-   SCALE TOGGLE — blow up planet sizes for visibility (×1 → ×3 → ×6 → ×1)
-   ═══════════════════════════════════════════════════════════════════════ */
-const scaleBtn = document.getElementById('scale-btn');
-const SCALE_STEPS = [1, 3, 6];
-let scaleIdx = 0;
-scaleBtn.addEventListener('click', () => {
-  scaleIdx = (scaleIdx + 1) % SCALE_STEPS.length;
-  const s = SCALE_STEPS[scaleIdx];
-  earthGroup.scale.setScalar(s);
-  moonMesh.scale.setScalar(s);
-  scaleBtn.textContent = `Scale ×${s}`;
-  scaleBtn.classList.toggle('active', s > 1);
-});
 
 /* ═══════════════════════════════════════════════════════════════════════
    REALISTIC MODE — always on, push starfield to true-scale distances
@@ -1100,15 +1095,18 @@ scene.children.forEach(c => {
    REWIND — replay mission from earliest Chebyshev data (~T+3.4h)
    ═══════════════════════════════════════════════════════════════════════ */
 const rewindBtn = document.getElementById('rewind-btn');
-let rewinding = false;
+let rewinding = false, rewindTargetMET = 0;
 rewindBtn.addEventListener('click', () => {
   if (!rewinding) {
-    // Start rewind playback from earliest data
+    // Calculate timeScale so playback takes ~60 seconds
+    const currentMET = (Date.now() - LAUNCH_DATE.getTime()) / 1000;
+    const missionSpan = Math.max(currentMET - T_CHEB_MET_START, 60);
     rewinding = true;
+    rewindTargetMET = currentMET;
     useRealTime = false;
     paused = false;
     met = T_CHEB_MET_START;
-    timeScale = 100; // 100× speed — comfortable for watching
+    timeScale = missionSpan / 60; // finish in ~60 seconds
     rewindBtn.classList.add('active');
     rewindBtn.textContent = '⏹ Live';
   } else {
@@ -1199,16 +1197,7 @@ async function pollDSN() {
     }
   } catch(e) { console.warn('DSN poll failed:', e); }
 }
-let dsnFirstLoad = true;
-(async()=>{
-  await pollDSN();
-  if (dsnFirstLoad) {
-    dsnFirstLoad = false;
-    const el = document.getElementById('dsn-status');
-    el.classList.add('peek');
-    setTimeout(()=>el.classList.remove('peek'), 4000);
-  }
-})();
+pollDSN();
 setInterval(pollDSN, 5000);
 
 
