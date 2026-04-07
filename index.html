@@ -54,22 +54,6 @@ canvas{display:block}
 }
 #brightness-slider::-webkit-slider-thumb:hover{background:rgba(255,255,255,.8)}
 
-/* Top-center: DSN status */
-#dsn-zone{position:fixed;top:0;left:50%;transform:translateX(-50%);width:320px;height:50px;z-index:10}
-#dsn-zone:hover #dsn-status{opacity:1;pointer-events:auto}
-#dsn-status{
-  position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:10;
-  display:flex;gap:10px;align-items:center;
-  padding:6px 14px;border-radius:16px;
-  background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.06);
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  font-size:9px;letter-spacing:1px;color:rgba(255,255,255,.3);text-transform:uppercase;
-  transition:opacity .6s;opacity:0;pointer-events:none;
-}
-#dsn-status .dot{width:5px;height:5px;border-radius:50%;background:#333;transition:background .5s}
-#dsn-status .dot.live{background:#4f8;box-shadow:0 0 6px #4f8}
-#dsn-status .dish{display:flex;align-items:center;gap:4px}
-#dsn-status .range{color:rgba(255,255,255,.2);font-variant-numeric:tabular-nums}
 
 /* Bottom-right: music panel */
 #br-zone{position:fixed;bottom:0;right:0;width:380px;height:80px;z-index:10}
@@ -156,14 +140,6 @@ canvas{display:block}
   </div>
 </div>
 
-<div id="dsn-zone">
-  <div id="dsn-status">
-    <span>DSN</span>
-    <span class="dish" id="dsn-d1"><span class="dot"></span><span class="name">—</span></span>
-    <span class="dish" id="dsn-d2"><span class="dot"></span><span class="name">—</span></span>
-    <span class="range" id="dsn-range">—</span>
-  </div>
-</div>
 
 <div id="br-zone">
   <div id="music-panel" class="ui-fade">
@@ -1145,61 +1121,6 @@ window.addEventListener('keydown', (e) => {
     case'0':focusTarget=null;document.querySelectorAll('.focus-btn').forEach(b=>b.classList.remove('active'));break;
   }
 });
-
-/* ═══════════════════════════════════════════════════════════════════════
-   DSN LIVE FEED — poll Deep Space Network status for Artemis II (EM2)
-   ═══════════════════════════════════════════════════════════════════════ */
-const dsnD1 = document.getElementById('dsn-d1');
-const dsnD2 = document.getElementById('dsn-d2');
-const dsnRange = document.getElementById('dsn-range');
-
-async function pollDSN() {
-  try {
-    const resp = await fetch('https://eyes.nasa.gov/dsn/data/dsn.xml');
-    const text = await resp.text();
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(text, 'text/xml');
-    const dishes = xml.querySelectorAll('dish');
-    const em2Dishes = [];
-    dishes.forEach(d => {
-      const targets = d.querySelectorAll('target');
-      targets.forEach(t => {
-        if (t.getAttribute('name') === 'EM2') {
-          const upleg = parseFloat(t.getAttribute('uplegRange')) || 0;
-          const downleg = parseFloat(t.getAttribute('downlegRange')) || 0;
-          const rtlt = parseFloat(t.getAttribute('rtlt')) || 0;
-          em2Dishes.push({
-            name: d.getAttribute('name'),
-            range: Math.max(upleg, downleg),
-            rtlt: rtlt,
-            signals: d.querySelectorAll('downSignal[active="true"]').length
-          });
-        }
-      });
-    });
-    if (em2Dishes.length >= 1) {
-      dsnD1.querySelector('.dot').classList.add('live');
-      dsnD1.querySelector('.name').textContent = em2Dishes[0].name;
-      if (em2Dishes.length >= 2) {
-        dsnD2.querySelector('.dot').classList.add('live');
-        dsnD2.querySelector('.name').textContent = em2Dishes[1].name;
-      } else {
-        dsnD2.querySelector('.dot').classList.remove('live');
-        dsnD2.querySelector('.name').textContent = '—';
-      }
-      const rangeKm = em2Dishes[0].range;
-      dsnRange.textContent = rangeKm > 0 ? `${(rangeKm/1000).toFixed(0)}k km` : '—';
-    } else {
-      dsnD1.querySelector('.dot').classList.remove('live');
-      dsnD2.querySelector('.dot').classList.remove('live');
-      dsnD1.querySelector('.name').textContent = '—';
-      dsnD2.querySelector('.name').textContent = '—';
-      dsnRange.textContent = 'no signal';
-    }
-  } catch(e) { console.warn('DSN poll failed:', e); }
-}
-pollDSN();
-setInterval(pollDSN, 5000);
 
 
 /* ═══════════════════════════════════════════════════════════════════════
