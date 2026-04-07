@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Artemis II — Live Tracker</title>
 <style>
+:root{--ui-alpha:0.4}
 *{margin:0;padding:0;box-sizing:border-box}
 body{overflow:hidden;background:#000;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#fff}
 canvas{display:block}
@@ -25,25 +26,33 @@ canvas{display:block}
 .focus-btn{
   padding:7px 14px;border-radius:16px;cursor:pointer;
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
-  color:rgba(255,255,255,.35);font-size:10px;letter-spacing:1px;
+  color:rgba(255,255,255,var(--ui-alpha));font-size:10px;letter-spacing:1px;
   text-transform:uppercase;font-family:inherit;
   transition:all .3s;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
 }
 .focus-btn:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.7)}
 .focus-btn.active{color:rgba(140,200,255,.75);border-color:rgba(140,200,255,.25);background:rgba(140,200,255,.06)}
 
-/* Top-right: lighting toggle */
-#tr-zone{position:fixed;top:0;right:0;width:180px;height:60px;z-index:10}
+/* Top-right: brightness slider */
+#tr-zone{position:fixed;top:0;right:0;width:220px;height:60px;z-index:10}
 #tr-zone:hover .ui-fade{opacity:1;pointer-events:auto}
-#lighting-toggle{
-  position:fixed;top:24px;right:24px;z-index:10;
-  padding:8px 18px;border-radius:20px;cursor:pointer;
+#brightness-panel{
+  position:fixed;top:22px;right:24px;z-index:10;
+  display:flex;align-items:center;gap:10px;
+  padding:6px 16px;border-radius:20px;
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
-  color:rgba(255,255,255,.45);font-size:10px;letter-spacing:2px;text-transform:uppercase;
-  transition:all .3s;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-family:inherit;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
 }
-#lighting-toggle:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.7)}
-#lighting-toggle.lit{color:rgba(255,220,140,.75);border-color:rgba(255,200,100,.25);background:rgba(255,200,100,.08)}
+#brightness-panel label{color:rgba(255,255,255,var(--ui-alpha));font-size:9px;letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+#brightness-slider{
+  -webkit-appearance:none;appearance:none;width:100px;height:2px;
+  background:rgba(255,255,255,.12);border-radius:1px;outline:none;cursor:pointer;
+}
+#brightness-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:10px;height:10px;border-radius:50%;
+  background:rgba(255,255,255,.5);border:none;cursor:pointer;transition:background .2s;
+}
+#brightness-slider::-webkit-slider-thumb:hover{background:rgba(255,255,255,.8)}
 
 /* Top-center: DSN status */
 #dsn-zone{position:fixed;top:0;left:50%;transform:translateX(-50%);width:320px;height:50px;z-index:10}
@@ -99,11 +108,11 @@ canvas{display:block}
 #music-panel.playing:hover #music-expanded{background:rgba(8,8,14,.88);border-color:rgba(255,255,255,.07);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);padding:14px}
 
 /* Bottom-left: mission label, phase, debug */
-#bl-zone{position:fixed;bottom:0;left:0;width:240px;height:120px;z-index:10}
+#bl-zone{position:fixed;bottom:0;left:0;width:240px;height:160px;z-index:10}
 #bl-zone:hover .ui-fade{opacity:1;pointer-events:auto}
-#mission-label{position:fixed;bottom:28px;left:28px;z-index:10;color:rgba(255,255,255,.18);font-size:10px;letter-spacing:4px;text-transform:uppercase}
-#phase-label{position:fixed;bottom:48px;left:28px;z-index:10;color:rgba(255,255,255,.12);font-size:9px;letter-spacing:2px;text-transform:uppercase}
-#orbits-btn,#debug-btn{
+#mission-label{position:fixed;bottom:28px;left:28px;z-index:10;color:rgba(255,255,255,var(--ui-alpha));font-size:10px;letter-spacing:4px;text-transform:uppercase}
+#phase-label{position:fixed;bottom:48px;left:28px;z-index:10;color:rgba(255,255,255,calc(var(--ui-alpha)*0.7));font-size:9px;letter-spacing:2px;text-transform:uppercase}
+#orbits-btn,#scale-btn,#rewind-btn,#debug-btn{
   position:fixed;left:28px;z-index:10;
   cursor:pointer;
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
@@ -112,7 +121,11 @@ canvas{display:block}
 }
 #orbits-btn{bottom:68px}
 #orbits-btn.active{color:rgba(140,200,255,.5);border-color:rgba(140,200,255,.15)}
-#debug-btn{bottom:88px}
+#scale-btn{bottom:88px}
+#scale-btn.active{color:rgba(255,200,100,.5);border-color:rgba(255,200,100,.15)}
+#rewind-btn{bottom:108px}
+#rewind-btn.active{color:rgba(255,180,100,.5);border-color:rgba(255,180,100,.15)}
+#debug-btn{bottom:128px}
 #debug-overlay{
   display:none;position:fixed;top:60px;left:24px;z-index:999;
   color:lime;font-size:10px;font-family:monospace;line-height:1.5;
@@ -138,7 +151,10 @@ canvas{display:block}
 </div>
 
 <div id="tr-zone">
-  <button id="lighting-toggle" class="ui-fade">Light it up</button>
+  <div id="brightness-panel" class="ui-fade">
+    <label>Brightness</label>
+    <input id="brightness-slider" type="range" min="0" max="100" value="35">
+  </div>
 </div>
 
 <div id="dsn-zone">
@@ -164,6 +180,8 @@ canvas{display:block}
   <div id="phase-label" class="ui-fade"></div>
   <div id="mission-label" class="ui-fade">Artemis II</div>
   <button id="orbits-btn" class="ui-fade">Orbits</button>
+  <button id="scale-btn" class="ui-fade">Scale ×1</button>
+  <button id="rewind-btn" class="ui-fade">⏪ Rewind</button>
   <button id="debug-btn" class="ui-fade">Debug</button>
 </div>
 <div id="debug-overlay"></div>
@@ -192,10 +210,6 @@ const LAUNCH_DATE = new Date(params.get('launch') || '2026-04-01T22:35:12Z');
 const EARTH_RADIUS = 10;
 const SCALE_KM     = EARTH_RADIUS / 6371.0;
 const MOON_RADIUS  = 2.73;
-const PARK_RADIUS  = EARTH_RADIUS * 1.029;
-const PARK_PERIOD  = 88.2 * 60;
-const PARK_OMEGA   = 2 * Math.PI / PARK_PERIOD;
-const T_TLI        = 1.5 * PARK_PERIOD;
 
 let met, useRealTime = true, timeScale = 1, paused = false;
 function initMET() { met = (Date.now() - LAUNCH_DATE.getTime()) / 1000; }
@@ -206,10 +220,6 @@ function updateMET(dt) {
 }
 function metToJD(t) { return (LAUNCH_DATE.getTime() + t * 1000) / 86400000 + 2440587.5; }
 
-function smootherstep(t) {
-  t = Math.max(0, Math.min(1, t));
-  return t * t * t * (t * (t * 6 - 15) + 10);
-}
 
 /* ═══════════════════════════════════════════════════════════════════════
    CHEBYSHEV EVALUATOR — Clenshaw recurrence
@@ -237,18 +247,15 @@ function evalBody(body, jd) {
   return { x: evalCheb(s.cx, tn), y: evalCheb(s.cy, tn), z: evalCheb(s.cz, tn) };
 }
 
-// J2000 (equatorial) → scene coordinates
-function j2kToScene(x, y, z) {
-  const eps = 23.4392794 * Math.PI / 180;
-  const cosE = Math.cos(eps), sinE = Math.sin(eps);
-  const ecl_y = cosE * y + sinE * z;
-  const ecl_z = -sinE * y + cosE * z;
-  return new THREE.Vector3(x * SCALE_KM, ecl_z * SCALE_KM, ecl_y * SCALE_KM);
+// Ecliptic J2000 → scene coordinates
+// Scene: X = ecliptic X, Y(up) = ecliptic Z (north ecliptic pole), Z = ecliptic Y
+function eclToScene(x, y, z, scale) {
+  return new THREE.Vector3(x * scale, z * scale, y * scale);
 }
 
 function bodyScenePos(body, jd) {
   const p = evalBody(body, jd);
-  return j2kToScene(p.x, p.y, p.z);
+  return eclToScene(p.x, p.y, p.z, SCALE_KM);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -282,6 +289,17 @@ try {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+   LOAD REAL ORBITAL DATA (from JPL Horizons)
+   ═══════════════════════════════════════════════════════════════════════ */
+let orbitData = null;
+try {
+  const orbResp = await fetch('orbits.json');
+  orbitData = await orbResp.json();
+  console.log(`Orbits: moon_geo ${orbitData.moon_geo.points.length}, earth_helio ${orbitData.earth_helio.points.length}, moon_helio ${orbitData.moon_helio.points.length}`);
+} catch(e) { console.warn('orbits.json not found, orbital paths disabled'); }
+
+
+/* ═══════════════════════════════════════════════════════════════════════
    POSITION FUNCTIONS — Chebyshev for all bodies
    ═══════════════════════════════════════════════════════════════════════ */
 function getMoonPos(t) {
@@ -302,42 +320,17 @@ function getSunDir(t) {
   return new THREE.Vector3(Math.cos(lam), 0, Math.sin(lam)).normalize();
 }
 
-// Early trajectory (before Chebyshev data starts)
-const firstChebPos = bodyScenePos(scBody, CHEB_JD_START);
-const firstChebAngle = Math.atan2(firstChebPos.z, firstChebPos.x);
-const tliAngle = firstChebAngle - Math.PI / 2;
-let PARK_START_ANGLE = tliAngle - PARK_OMEGA * T_TLI;
-PARK_START_ANGLE = ((PARK_START_ANGLE + Math.PI) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI) - Math.PI;
-
-function computeEarlyPosition(t) {
-  if (t < 0) return new THREE.Vector3(PARK_RADIUS, 0, 0);
-  if (t <= T_TLI) {
-    const a = PARK_START_ANGLE + PARK_OMEGA * t;
-    return new THREE.Vector3(PARK_RADIUS * Math.cos(a), 0, PARK_RADIUS * Math.sin(a));
-  }
-  const s = (t - T_TLI) / (T_CHEB_MET_START - T_TLI);
-  const ease = smootherstep(s);
-  const sa = PARK_START_ANGLE + PARK_OMEGA * T_TLI;
-  const endR = firstChebPos.length();
-  let dA = firstChebAngle - sa;
-  while (dA > Math.PI) dA -= 2*Math.PI;
-  while (dA < -Math.PI) dA += 2*Math.PI;
-  const a = sa + dA * ease;
-  const r = PARK_RADIUS + (endR - PARK_RADIUS) * ease;
-  return new THREE.Vector3(r * Math.cos(a), firstChebPos.y * ease, r * Math.sin(a));
-}
-
 function getPositionAtMET(t) {
   t = Math.max(0, t);
   const jd = metToJD(t);
   if (jd >= CHEB_JD_START && jd <= CHEB_JD_END) return bodyScenePos(scBody, jd);
-  if (t < T_CHEB_MET_START) return computeEarlyPosition(t);
-  return bodyScenePos(scBody, CHEB_JD_END);
+  // Clamp to nearest Chebyshev endpoint
+  return bodyScenePos(scBody, jd < CHEB_JD_START ? CHEB_JD_START : CHEB_JD_END);
 }
 
 function getMissionPhase(t) {
   if (t < 0)                     return 'Pre-Launch';
-  if (t <= T_TLI)                return 'Parking Orbit';
+  if (t <= T_CHEB_MET_START)     return 'Ascent / TLI';
   if (t <= FLYBY_MET - 10800)   return 'Trans-Lunar Coast';
   if (t <= FLYBY_MET + 10800)   return 'Lunar Flyby';
   if (t <= T_MISSION_END - 600) return 'Return Coast';
@@ -348,11 +341,9 @@ function getMissionPhase(t) {
 /* ═══════════════════════════════════════════════════════════════════════
    BUILD TRAJECTORY DISPLAY LINE
    ═══════════════════════════════════════════════════════════════════════ */
-const earlyPts = [];
-for (let t = 0; t < T_CHEB_MET_START; t += 30) earlyPts.push(computeEarlyPosition(t));
 const chebPts = [];
 for (let t = T_CHEB_MET_START; t <= T_MISSION_END; t += 60) chebPts.push(getPositionAtMET(t));
-const TRAJ_POINTS = [...earlyPts, ...chebPts];
+const TRAJ_POINTS = chebPts;
 const DISPLAY_N = TRAJ_POINTS.length - 1;
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -388,21 +379,21 @@ const moonTex = tex.load('https://upload.wikimedia.org/wikipedia/commons/thumb/d
    SCENE SETUP
    ═══════════════════════════════════════════════════════════════════════ */
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 20000);
+const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 600000);
 camera.position.set(80, 60, 100);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
+renderer.toneMappingExposure = 1.5;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 renderer.domElement.style.cssText = 'display:block;position:fixed;top:0;left:0;z-index:1;width:100vw;height:100vh';
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.04;
-controls.minDistance = 5; controls.maxDistance = 3000;
+controls.minDistance = 5; controls.maxDistance = 400000;
 controls.enablePan = true; controls.autoRotate = true; controls.autoRotateSpeed = 0.15;
 let interactionTimer;
 renderer.domElement.addEventListener('pointerdown', () => { controls.autoRotate = false; clearTimeout(interactionTimer); });
@@ -421,17 +412,19 @@ renderer.domElement.addEventListener('pointerup', () => { clearTimeout(interacti
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  scene.add(new THREE.Points(g, new THREE.PointsMaterial({ size:1.2, sizeAttenuation:true, vertexColors:true, transparent:true, opacity:0.9 })));
+  const starMat = new THREE.PointsMaterial({ size:1.2, sizeAttenuation:true, vertexColors:true, transparent:true, opacity:0.9 });
+  scene.add(new THREE.Points(g, starMat));
+  window._starMat = starMat; // stored for brightness control
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
    SUN & LIGHTING
    ═══════════════════════════════════════════════════════════════════════ */
 const sunDir = getSunDir(Math.max(met, 0));
-const sunLight = new THREE.DirectionalLight(0xfff8ee, 2.8);
+const sunLight = new THREE.DirectionalLight(0xfff8ee, 7);
 sunLight.position.copy(sunDir.clone().multiplyScalar(2000));
 scene.add(sunLight);
-const ambient = new THREE.AmbientLight(0x1a2030, 0.12);
+const ambient = new THREE.AmbientLight(0x1a2030, 0.5);
 scene.add(ambient);
 
 const _sgc = document.createElement('canvas'); _sgc.width = _sgc.height = 128;
@@ -444,19 +437,30 @@ const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.Canva
 sunGlow.position.copy(sunDir.clone().multiplyScalar(4000)); sunGlow.scale.setScalar(500);
 scene.add(sunGlow);
 
+// Sun sphere for realistic mode
+const sunRadiusScene = 695700 * SCALE_KM;
+const _sunSphere = new THREE.Mesh(
+  new THREE.SphereGeometry(sunRadiusScene, 32, 16),
+  new THREE.MeshBasicMaterial({ color: 0xfffae8 })
+);
+_sunSphere.visible = false;
+scene.add(_sunSphere);
+window._sunSphere = _sunSphere;
+
 /* ═══════════════════════════════════════════════════════════════════════
    EARTH — custom shader
    ═══════════════════════════════════════════════════════════════════════ */
-const earthUniforms = { tDay:{value:earthDayTex}, tNight:{value:earthNightTex}, tSpecular:{value:earthSpecTex}, sunDir:{value:sunDir}, uStylized:{value:0.0} };
+const earthUniforms = { tDay:{value:earthDayTex}, tNight:{value:earthNightTex}, tSpecular:{value:earthSpecTex}, sunDir:{value:sunDir}, uStylized:{value:0.35} };
 const earthMat = new THREE.ShaderMaterial({
   uniforms: earthUniforms,
-  vertexShader: `varying vec2 vUv; varying vec3 vNormal; varying vec3 vViewPos;
-    void main(){ vUv=uv; vec4 mv=modelViewMatrix*vec4(position,1.0); vNormal=normalize(normalMatrix*normal); vViewPos=-mv.xyz; gl_Position=projectionMatrix*mv; }`,
+  vertexShader: `varying vec2 vUv; varying vec3 vNormal; varying vec3 vViewPos; varying vec3 vSunDirView;
+    uniform vec3 sunDir;
+    void main(){ vUv=uv; vec4 mv=modelViewMatrix*vec4(position,1.0); vNormal=normalize(normalMatrix*normal); vViewPos=-mv.xyz; vSunDirView=normalize(mat3(viewMatrix)*sunDir); gl_Position=projectionMatrix*mv; }`,
   fragmentShader: `precision highp float;
-    uniform sampler2D tDay,tNight,tSpecular; uniform vec3 sunDir; uniform float uStylized;
-    varying vec2 vUv; varying vec3 vNormal,vViewPos;
+    uniform sampler2D tDay,tNight,tSpecular; uniform float uStylized;
+    varying vec2 vUv; varying vec3 vNormal,vViewPos,vSunDirView;
     void main(){
-      vec3 N=normalize(vNormal), L=normalize(sunDir), V=normalize(vViewPos);
+      vec3 N=normalize(vNormal), L=vSunDirView, V=normalize(vViewPos);
       float NdL=dot(N,L), dayMix=smoothstep(-0.12,0.28,NdL), diff=max(0.0,NdL);
       vec3 dayTex=texture2D(tDay,vUv).rgb, nightTex=texture2D(tNight,vUv).rgb;
       float specMask=texture2D(tSpecular,vUv).r;
@@ -478,14 +482,14 @@ earthGroup.rotation.z = 23.4 * Math.PI / 180;
 earthGroup.add(earth);
 scene.add(earthGroup);
 
-const atmosUniforms = { sunDir:{value:sunDir}, uStylized:{value:0.0} };
+const atmosUniforms = { sunDir:{value:sunDir}, uStylized:{value:0.35} };
 const atmosphere = new THREE.Mesh(
   new THREE.SphereGeometry(EARTH_RADIUS*1.018,64,32),
   new THREE.ShaderMaterial({
     uniforms: atmosUniforms,
-    vertexShader: `varying vec3 vNormal,vViewPos; void main(){ vNormal=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vViewPos=-mv.xyz; gl_Position=projectionMatrix*mv; }`,
-    fragmentShader: `precision highp float; uniform vec3 sunDir; uniform float uStylized; varying vec3 vNormal,vViewPos;
-      void main(){ vec3 N=normalize(vNormal),V=normalize(vViewPos),L=normalize(sunDir);
+    vertexShader: `uniform vec3 sunDir; varying vec3 vNormal,vViewPos,vSunDirView; void main(){ vNormal=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vViewPos=-mv.xyz; vSunDirView=normalize(mat3(viewMatrix)*sunDir); gl_Position=projectionMatrix*mv; }`,
+    fragmentShader: `precision highp float; uniform float uStylized; varying vec3 vNormal,vViewPos,vSunDirView;
+      void main(){ vec3 N=normalize(vNormal),V=normalize(vViewPos),L=vSunDirView;
         float rim=pow(1.0-max(0.0,dot(N,V)),3.5), sunFace=max(0.0,dot(N,L)), term=pow(1.0-abs(dot(N,L)),4.0);
         vec3 col=mix(vec3(0.04,0.08,0.25),vec3(0.3,0.6,1.0),sunFace);
         col=mix(col,vec3(0.85,0.35,0.15),term*0.4);
@@ -509,44 +513,54 @@ const moonMesh = new THREE.Mesh(
 scene.add(moonMesh);
 
 /* ═══════════════════════════════════════════════════════════════════════
-   ORBITAL PATHS — Moon (blue) & Sun ecliptic/Earth heliocentric (gold)
+   ORBITAL PATHS — real JPL Horizons data
+   Moon geocentric (cyan), Earth heliocentric (gold), Moon heliocentric (teal)
    ═══════════════════════════════════════════════════════════════════════ */
 const orbitalPathGroup = new THREE.Group();
 scene.add(orbitalPathGroup);
 let orbitalPathsVisible = true;
 
-// Moon orbit path (cyan-blue)
-{
-  const moonOrbitPts = [];
-  const moonSteps = 600;
-  const jdSpan = CHEB_JD_END - CHEB_JD_START;
-  for (let i = 0; i <= moonSteps; i++) {
-    const jd = CHEB_JD_START + (i / moonSteps) * jdSpan;
-    moonOrbitPts.push(bodyScenePos(moonBody, jd));
-  }
-  const moonOrbitGeo = new THREE.BufferGeometry().setFromPoints(moonOrbitPts);
-  orbitalPathGroup.add(new THREE.Line(moonOrbitGeo, new THREE.LineBasicMaterial({
-    color: 0x4488cc, transparent: true, opacity: 0.25
-  })));
-}
+// Materials stored for brightness control
+const orbitMaterials = [];
 
-// Sun apparent path / ecliptic (gold-amber) — shows Earth's heliocentric motion
-// In our geocentric frame the Sun traces the ecliptic; this IS Earth's orbit viewed from Earth
-{
-  const sunPathPts = [];
-  const sunSteps = 600;
-  const jdSpan = CHEB_JD_END - CHEB_JD_START;
-  const sunSceneScale = 400; // scale sun distance down to be visible
-  for (let i = 0; i <= sunSteps; i++) {
-    const jd = CHEB_JD_START + (i / sunSteps) * jdSpan;
-    const sp = bodyScenePos(sunBody, jd);
-    // Sun is far away — normalize and scale to a visible radius
-    sunPathPts.push(sp.normalize().multiplyScalar(sunSceneScale));
+if (orbitData) {
+  // ── Moon's orbit around Earth (geocentric, ecliptic J2000, same scale as mission) ──
+  // 30 days of real Horizons data — plotted in Earth-centered frame at real km scale
+  {
+    const pts = orbitData.moon_geo.points.map(p => eclToScene(p[1], p[2], p[3], SCALE_KM));
+    pts.push(pts[0].clone()); // close the loop
+    const mat = new THREE.LineBasicMaterial({ color: 0x4499dd, transparent: true, opacity: 0.25 });
+    orbitMaterials.push(mat);
+    orbitalPathGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat));
   }
-  const sunPathGeo = new THREE.BufferGeometry().setFromPoints(sunPathPts);
-  orbitalPathGroup.add(new THREE.Line(sunPathGeo, new THREE.LineBasicMaterial({
-    color: 0xccaa44, transparent: true, opacity: 0.15
-  })));
+
+  // ── Earth's orbit around the Sun (heliocentric, true km scale) ──
+  {
+    const earthPts = orbitData.earth_helio.points;
+    // Find Earth's heliocentric position closest to now
+    const nowJD = metToJD(met);
+    let bestIdx = 0, bestDist = Infinity;
+    for (let i = 0; i < earthPts.length; i++) {
+      const d = Math.abs(earthPts[i][0] - nowJD);
+      if (d < bestDist) { bestDist = d; bestIdx = i; }
+    }
+    const ex = earthPts[bestIdx][1], ey = earthPts[bestIdx][2], ez = earthPts[bestIdx][3];
+    const earthR = Math.sqrt(ex*ex + ey*ey + ez*ez);
+
+    // Realistic — true km scale
+    const realisticPts = earthPts.map(p =>
+      eclToScene(p[1] - ex, p[2] - ey, p[3] - ez, SCALE_KM)
+    );
+    realisticPts.push(realisticPts[0].clone());
+    const realisticMat = new THREE.LineBasicMaterial({ color: 0xccaa44, transparent: true, opacity: 0.12 });
+    orbitMaterials.push(realisticMat);
+    const earthOrbitRealistic = new THREE.Line(new THREE.BufferGeometry().setFromPoints(realisticPts), realisticMat);
+    orbitalPathGroup.add(earthOrbitRealistic);
+
+    window._earthHelioRealisticRadius = earthR * SCALE_KM;
+
+    console.log(`Helio orbit: realistic=${(earthR*SCALE_KM).toFixed(0)}u`);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -793,8 +807,28 @@ function animate() {
     // Sun — from Chebyshev data (real position)
     const sd = getSunDir(met);
     sunDir.copy(sd);
-    sunLight.position.copy(sd.clone().multiplyScalar(2000));
-    sunGlow.position.copy(sd.clone().multiplyScalar(4000));
+    if (realisticMode) {
+      // True-scale Sun position from Chebyshev data (not normalized)
+      const jd = metToJD(Math.max(met, 0));
+      const sunPos = (jd >= CHEB_JD_START && jd <= CHEB_JD_END)
+        ? bodyScenePos(sunBody, jd)
+        : sd.clone().multiplyScalar(window._earthHelioRealisticRadius || 234000);
+      sunLight.position.copy(sunPos);
+      sunGlow.position.copy(sunPos);
+      const sunDist = sunPos.length();
+      // Sun radius ~695,700 km → scene units; glow ~4x that for visibility
+      const sunRadiusScene = 695700 * SCALE_KM;
+      sunGlow.scale.setScalar(sunRadiusScene * 8);
+      sunGlow.material.opacity = 1.0;
+      // Show sun sphere in realistic mode
+      if (window._sunSphere) { window._sunSphere.position.copy(sunPos); window._sunSphere.visible = true; window._sunSphere.scale.setScalar(1); }
+    } else {
+      sunLight.position.copy(sd.clone().multiplyScalar(2000));
+      sunGlow.position.copy(sd.clone().multiplyScalar(4000));
+      sunGlow.scale.setScalar(500);
+      sunGlow.material.opacity = 1.0;
+      if (window._sunSphere) window._sunSphere.visible = false;
+    }
 
     // Earth — GMST rotation for accurate continent illumination
     const gmst = getGMST(curDate);
@@ -851,16 +885,29 @@ function animate() {
 animate();
 
 /* ═══════════════════════════════════════════════════════════════════════
-   LIGHTING TOGGLE
+   BRIGHTNESS SLIDER — continuous 0-100 range
    ═══════════════════════════════════════════════════════════════════════ */
-const lightBtn = document.getElementById('lighting-toggle');
-let litUp = false;
-lightBtn.addEventListener('click', () => {
-  litUp = !litUp; lightBtn.classList.toggle('lit', litUp);
-  earthUniforms.uStylized.value = atmosUniforms.uStylized.value = litUp ? 1 : 0;
-  if (litUp) { sunLight.intensity=8; ambient.intensity=2; renderer.toneMappingExposure=2.2; clouds.material.opacity=0.45; }
-  else { sunLight.intensity=2.8; ambient.intensity=0.12; renderer.toneMappingExposure=1.1; clouds.material.opacity=0.28; }
-});
+const brightnessSlider = document.getElementById('brightness-slider');
+function applyBrightness(v) {
+  const t = v / 100; // 0..1
+  // Lighting & shaders
+  earthUniforms.uStylized.value = atmosUniforms.uStylized.value = t;
+  sunLight.intensity = 7 + t * 8;
+  ambient.intensity = 0.6 + t * 2.5;
+  renderer.toneMappingExposure = 1.8 + t * 1.2;
+  clouds.material.opacity = 0.3 + t * 0.2;
+  // Stars
+  if (window._starMat) window._starMat.opacity = 0.5 + t * 0.5;
+  // Orbit lines
+  orbitMaterials.forEach(m => { m.opacity = 0.1 + t * 0.5; });
+  // Trajectory line
+  if (trajLine) trajLine.material.opacity = 0.4 + t * 0.6;
+  // UI elements — scale text opacity with brightness
+  const uiAlpha = 0.15 + t * 0.55;
+  document.documentElement.style.setProperty('--ui-alpha', uiAlpha);
+}
+brightnessSlider.addEventListener('input', () => applyBrightness(+brightnessSlider.value));
+applyBrightness(+brightnessSlider.value);
 
 /* ═══════════════════════════════════════════════════════════════════════
    YOUTUBE MUSIC
@@ -901,6 +948,68 @@ orbitsBtn.addEventListener('click', () => {
   orbitalPathsVisible = !orbitalPathsVisible;
   orbitalPathGroup.visible = orbitalPathsVisible;
   orbitsBtn.classList.toggle('active', orbitalPathsVisible);
+});
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SCALE TOGGLE — blow up planet sizes for visibility (×1 → ×3 → ×6 → ×1)
+   ═══════════════════════════════════════════════════════════════════════ */
+const scaleBtn = document.getElementById('scale-btn');
+const SCALE_STEPS = [1, 3, 6];
+let scaleIdx = 0;
+scaleBtn.addEventListener('click', () => {
+  scaleIdx = (scaleIdx + 1) % SCALE_STEPS.length;
+  const s = SCALE_STEPS[scaleIdx];
+  earthGroup.scale.setScalar(s);
+  moonMesh.scale.setScalar(s);
+  scaleBtn.textContent = `Scale ×${s}`;
+  scaleBtn.classList.toggle('active', s > 1);
+});
+
+/* ═══════════════════════════════════════════════════════════════════════
+   REALISTIC MODE — always on, push starfield to true-scale distances
+   ═══════════════════════════════════════════════════════════════════════ */
+const realisticMode = true;
+// Push starfield out to wrap realistic-scale scene
+scene.children.forEach(c => {
+  if (c.isPoints && c.geometry.getAttribute('position').count > 10000) {
+    const pos = c.geometry.getAttribute('position');
+    const r = window._earthHelioRealisticRadius || 234000;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+      const d = Math.sqrt(x*x+y*y+z*z);
+      const s = (r * 1.5 + Math.random() * r) / d;
+      pos.setXYZ(i, x*s, y*s, z*s);
+    }
+    pos.needsUpdate = true;
+    c.geometry.computeBoundingSphere();
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════════════
+   REWIND — replay mission from earliest Chebyshev data (~T+3.4h)
+   ═══════════════════════════════════════════════════════════════════════ */
+const rewindBtn = document.getElementById('rewind-btn');
+let rewinding = false;
+rewindBtn.addEventListener('click', () => {
+  if (!rewinding) {
+    // Start rewind playback from earliest data
+    rewinding = true;
+    useRealTime = false;
+    paused = false;
+    met = T_CHEB_MET_START;
+    timeScale = 100; // 100× speed — comfortable for watching
+    rewindBtn.classList.add('active');
+    rewindBtn.textContent = '⏹ Live';
+  } else {
+    // Return to real-time
+    rewinding = false;
+    useRealTime = true;
+    paused = false;
+    initMET();
+    timeScale = 1;
+    rewindBtn.classList.remove('active');
+    rewindBtn.textContent = '⏪ Rewind';
+  }
 });
 
 /* ═══════════════════════════════════════════════════════════════════════
