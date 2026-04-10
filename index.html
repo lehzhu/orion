@@ -116,6 +116,22 @@ canvas{display:block}
   pointer-events:none;white-space:pre;
 }
 #debug-overlay.show{display:block}
+
+/* Bottom-center: countdown */
+#countdown{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:10;
+  text-align:center;pointer-events:none;
+}
+#countdown-time{
+  font-size:22px;font-weight:300;letter-spacing:3px;
+  color:rgba(255,255,255,.55);font-variant-numeric:tabular-nums;
+  font-family:'SF Mono',SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace;
+}
+#countdown-label{
+  font-size:8px;letter-spacing:3px;text-transform:uppercase;
+  color:rgba(255,255,255,.25);margin-top:4px;
+}
+#countdown.past #countdown-time{color:rgba(140,200,255,.5)}
 </style>
 </head>
 <body>
@@ -149,6 +165,11 @@ canvas{display:block}
     </div>
     <button id="music-btn" title="Background music">&#9835;</button>
   </div>
+</div>
+
+<div id="countdown">
+  <div id="countdown-time"></div>
+  <div id="countdown-label"></div>
 </div>
 
 <div id="bl-zone">
@@ -881,6 +902,42 @@ const clock = new THREE.Clock();
 const phaseLabel = document.getElementById('phase-label');
 const debugOverlay = document.getElementById('debug-overlay');
 let debugOn = false, dbgFrame = 0;
+
+/* ═══════════════════════════════════════════════════════════════════════
+   COUNTDOWN TO SPLASHDOWN — wall-clock driven for accuracy
+   ═══════════════════════════════════════════════════════════════════════ */
+const SPLASHDOWN_MS = Date.parse('2026-04-11T00:17:12Z');
+const countdownEl = document.getElementById('countdown');
+const countdownTime = document.getElementById('countdown-time');
+const countdownLabel = document.getElementById('countdown-label');
+function updateCountdown() {
+  const diff = SPLASHDOWN_MS - Date.now();
+  if (diff <= 0) {
+    countdownEl.classList.add('past');
+    const elapsed = -diff;
+    const es = Math.floor(elapsed / 1000);
+    const eh = Math.floor(es / 3600);
+    const em = Math.floor((es % 3600) / 60);
+    const ess = es % 60;
+    countdownTime.textContent = `+${String(eh).padStart(2,'0')}:${String(em).padStart(2,'0')}:${String(ess).padStart(2,'0')}`;
+    countdownLabel.textContent = 'since splashdown';
+  } else {
+    countdownEl.classList.remove('past');
+    const ts = Math.floor(diff / 1000);
+    const d = Math.floor(ts / 86400);
+    const h = Math.floor((ts % 86400) / 3600);
+    const m = Math.floor((ts % 3600) / 60);
+    const s = ts % 60;
+    if (d > 0) {
+      countdownTime.textContent = `${d}d ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    } else {
+      countdownTime.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+    countdownLabel.textContent = 'until splashdown';
+  }
+}
+setInterval(updateCountdown, 1000);
+updateCountdown();
 
 function animate() {
   requestAnimationFrame(animate);
